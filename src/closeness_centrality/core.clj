@@ -2,7 +2,8 @@
 	(:require 
 		[clojure.math.numeric-tower :as math]
 		[clojure.java.io :as io]
-		[clojure.string :as str]))
+		[clojure.string :as str]
+		[clojure.set :as set]))
 
 (defn as-decimal 
 	[m]
@@ -12,7 +13,7 @@
 	[graph visited adj e func]
 	`(recur
 		(apply conj ~visited ~adj)
-		(distinct (filter (complement ~visited) (apply concat (map #(~graph %) ~adj))))
+		(distinct (filter (complement ~visited) (apply set/union (map #(~graph %) ~adj))))
 		(inc ~e)
 		(~func)))
 
@@ -31,9 +32,9 @@
 
 (defn rank 
 	([graph]
-	(lazy-seq (sort-by second > (seq  (closeness graph)))))
+	(sort-by second > (seq  (closeness graph))))
 	([graph as-dec]
-	(lazy-seq (sort-by second > (seq  (if as-dec (as-decimal (closeness graph)) (closeness graph)))))))
+	(sort-by second > (seq  (if as-dec (as-decimal (closeness graph)) (closeness graph))))))
 
 (defn fraudulent 
 	[graph source]
@@ -52,13 +53,17 @@
 	(let [txt (slurp path) to-int (fn [s] (Integer. (re-matches #"[0-9]+" s)))]
 		(reduce conj [] (map to-int (str/split txt #"\r\n|\s")))))
 
+(defn add-connection
+	[graph [src dst]]
+	(if (and src dst)
+		(let [partial-add (fn [m src dst]
+				         		(let [adjs (m src #{})] 
+				         			(assoc m src (conj adjs dst))))]
+			(-> (partial-add graph src dst)
+			       (partial-add dst src)))
+		graph))
+
 (defn build-graph 
 	[path]
-	(let [input (read-file path)
-	         partial-add (fn [m [src dst]]
-			(if (contains? m src)
-				(update m src #(conj % dst))
-				(assoc m src [dst])))
-	         add (fn [m [src dst]] 
-			(partial-add (partial-add m [src dst]) [dst src]))]
-		(reduce add {} (partition 2 input))))
+	(let [input (read-file path)]
+		(reduce add-connection {} (partition 2 input))))
