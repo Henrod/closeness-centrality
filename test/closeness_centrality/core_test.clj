@@ -35,7 +35,7 @@
 				(is (apply >= (map second rank-seq)))
 				(is (map (fn [k v] (= (little-graph k) v) (rank-seq little-graph)))))))
 	(testing "Rank for edges.txt"
-		(let [graph (build-graph (read-file "test/closeness_centrality/edges.txt"))
+		(let [graph (build-graph "test/closeness_centrality/edges.txt")
 		         cmap (closeness graph)
 		         rank-seq (rank graph)]
 			(and
@@ -81,4 +81,4 @@
 (deftest test-build-file
 	(testing "build little input"
 		(is (= little-graph 
-			(build-graph (read-file "test/closeness_centrality/little_input.txt"))))))
+			(build-graph "test/closeness_centrality/little_input.txt")))))
