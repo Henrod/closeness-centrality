@@ -30,14 +30,20 @@
 	[graph]
 	(reduce (fn [m k] (assoc m k (/ 1 (bfs graph k)))) {} (keys graph)))
 
-(defn rank 
-	([graph]
-	(sort-by second > (seq  (closeness graph))))
-	([graph as-dec]
-	(sort-by second > (seq  (if as-dec (as-decimal (closeness graph)) (closeness graph))))))
+(defn rank
+	([mclose]
+		(into (sorted-map-by 
+			(fn [k1 k2] 
+				(<= (mclose k2) (mclose k1))))
+			mclose))
+	([mclose as-dec]
+		(into (sorted-map-by 
+			(fn [k1 k2] 
+				(<= (mclose k2) (mclose k1))))
+			(if as-dec (as-decimal mclose) mclose))))
 
 (defn fraudulent 
-	[graph & s]
+	[graph frauds]
 	(let [fk (fn [e v] (* v (- 1 (math/expt 1/2 e))))]
 		(reduce 
 			(fn [ncloseness source]
@@ -49,7 +55,7 @@
 								graph visited adj e 
 								#(reduce (fn [m k] (update m k (partial fk e))) ncloseness adj))))
 					ncloseness))
-			(closeness graph) s)))
+			(closeness graph) frauds)))
 
 (defn read-file
 	[path]
