@@ -11,18 +11,27 @@
     		[closeness-centrality.core :only [build-graph rank fraudulent add-connection]]))
 
 (defn handler 
-	[{params :params session :session}]
+	[{params :params session :session} cmd]
 	(cond
-		(params "logout") (-> (res/response "Session deleted") (assoc :session nil))
-		(params "add") (let [src (params "src") 
-					      dst (params "dst")
-					      graph (add-connection (:graph session {}) src dst)
-				         	      session (assoc session :graph graph)]
+		(= cmd :logout) (-> (res/response "Session deleted") (assoc :session nil))
+		(= cmd :rank) 	(-> (:graph session {}) rank str res/response)
+		(= cmd :add) 	(let [src (params "src") 
+					         dst (params "dst")
+					         graph (add-connection (:graph session {}) [src dst])
+				         	         session (assoc session :graph graph)]
 						(-> (res/response (str (rank graph :as-decimal)))
-						       (assoc :session session)))))
+						       (assoc :session session)))
+		(= cmd :fraud) 	(let [res (apply 
+				         	         		fraudulent 
+				         	         		(:graph session {})
+				         	         		(clojure.string/split (params "src") #"\s+" ))]
+						(res/response (str res)))))
 
 (defroutes app-routes
-	(POST "/" request (handler request))
+	(GET "/" request (handler request :rank))
+	(POST "/logout" request (handler request :logout))
+	(POST "/add" request (handler request :add))
+	(POST "/fraud" request (handler request :fraud))
   	(route/not-found "Not Found"))
 
 (def app

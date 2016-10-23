@@ -37,16 +37,19 @@
 	(sort-by second > (seq  (if as-dec (as-decimal (closeness graph)) (closeness graph))))))
 
 (defn fraudulent 
-	[graph source]
-	(if (contains? graph source)
-		(let [fk (fn [e v] (* v (- 1 (math/expt 1/2 e))))]
-			(loop [visited #{source}, adj (graph source), e 1, ncloseness (assoc (closeness graph) source 0)]
-				(if (empty? adj)
-					ncloseness
-					(common-recur 
-						graph visited adj e 
-						#(reduce (fn [m k] (update m k (partial fk e))) ncloseness adj)))))
-		(closeness graph)))
+	[graph & s]
+	(let [fk (fn [e v] (* v (- 1 (math/expt 1/2 e))))]
+		(reduce 
+			(fn [ncloseness source]
+				(if (and (contains? graph source) (pos? (ncloseness source)))
+					(loop [visited #{source}, adj (graph source), e 1, ncloseness (assoc ncloseness source 0)]
+						(if (empty? adj)
+							ncloseness
+							(common-recur 
+								graph visited adj e 
+								#(reduce (fn [m k] (update m k (partial fk e))) ncloseness adj))))
+					ncloseness))
+			(closeness graph) s)))
 
 (defn read-file
 	[path]
@@ -55,7 +58,7 @@
 
 (defn add-connection
 	[graph [src dst]]
-	(if (and src dst)
+	(if (and src dst (not= src dst))
 		(let [partial-add (fn [m src dst]
 				         		(let [adjs (m src #{})] 
 				         			(assoc m src (conj adjs dst))))]
