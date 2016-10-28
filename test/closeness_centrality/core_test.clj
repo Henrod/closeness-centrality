@@ -69,9 +69,9 @@
 (deftest test-as-decimal
 	(testing "test for some simple inputs"
 		(is (let [m {:1 1/2 :2 1/4 :3 1/8}]
-			(= (as-decimal m) {:1 0.5 :2 0.25 :3 0.125})))
+			(= (#'closeness-centrality.core/as-decimal m) {:1 0.5 :2 0.25 :3 0.125})))
 		(is (let [m {1 1/6 "k" 1/3}]
-			(= (as-decimal m) {1 (double 1/6) "k"  (double 1/3)})))))
+			(= (#'closeness-centrality.core/as-decimal m) {1 (double 1/6) "k"  (double 1/3)})))))
 
 (deftest test-read-file
 	(testing "read little_input.txt"

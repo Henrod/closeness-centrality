@@ -5,9 +5,9 @@
 		[clojure.string :as str]
 		[clojure.set :as set]))
 
-(defn as-decimal 
+(defn- as-decimal 
 	[m]
-	(zipmap (keys m) (map double (vals m))))
+	(zipmap (keys m) (pmap double (vals m))))
 
 (defmacro common-recur 
 	[graph visited adj e func]
@@ -29,7 +29,7 @@
 (defn closeness
 	[graph]
 	(let [ks (keys graph)]
-		(zipmap ks (pmap #(->> % (bfs graph) (/ 1)) ks))))
+		(zipmap ks (pmap #(/ 1 (bfs graph %)) ks))))
 
 (defn rank
 	([mclose]
@@ -48,7 +48,7 @@
 	(let [fk (fn [e v] (* v (- 1 (math/expt 1/2 e))))]
 		(reduce 
 			(fn [ncloseness source]
-				(if (and (contains? graph source) (pos? (ncloseness source)))
+				(if (contains? graph source)
 					(loop [visited #{source}, adj (graph source), e 1, ncloseness (assoc ncloseness source 0)]
 						(if (empty? adj)
 							ncloseness
@@ -61,7 +61,7 @@
 (defn read-file
 	[path]
 	(let [txt (slurp path) to-int (fn [s] (Integer. (re-matches #"[0-9]+" s)))]
-		(reduce conj [] (map to-int (str/split txt #"\r\n|\s")))))
+		(reduce conj [] (pmap to-int (str/split txt #"\r\n|\s")))))
 
 (defn add-connection
 	[graph [src dst]]
