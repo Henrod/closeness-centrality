@@ -30,14 +30,14 @@
 (deftest test-rank
 	(testing "Rank for little inputs"
 		(let [cmap (closeness little-graph)
-		         rank-seq (rank little-graph)]
+		         rank-seq (rank cmap)]
 			(and
 				(is (apply >= (map second rank-seq)))
 				(is (map (fn [k v] (= (little-graph k) v) (rank-seq little-graph)))))))
 	(testing "Rank for edges.txt"
 		(let [graph (build-graph "test/closeness_centrality/edges.txt")
 		         cmap (closeness graph)
-		         rank-seq (rank graph)]
+		         rank-seq (rank cmap)]
 			(and
 				(is (apply >= (map second rank-seq)))
 				(is (map (fn [k v] (= (little-graph k) v) (rank-seq little-graph))))))))
@@ -45,22 +45,22 @@
 (deftest test-fraudulent
 	(testing "Fraudulent for little inputs"
 		(are [x y] (= x y)
-			(fraudulent little-graph 1) {
+			(fraudulent little-graph #{1}) {
 				1 0, 
 				2  1/8, 
 				3  1/12, 
 				4  1/8}
-			(fraudulent little-graph 2) {
+			(fraudulent little-graph #{2}) {
 				1  1/8, 
 				2 0, 
 				3  1/8, 
 				4  1/12} 
-			(fraudulent little-graph 3){
+			(fraudulent little-graph #{3}){
 				1  1/8, 
 				2  3/16, 
 				3 0, 
 				4  7/48}
-			(fraudulent little-graph 4){
+			(fraudulent little-graph #{4}){
 				1  3/16, 
 				2  1/8, 
 				3  7/48, 

@@ -26,9 +26,10 @@
 				graph visited adj e 
 				#(+ dists (* e (count (filter (complement visited) adj))))))))
 
-(defn closeness 
+(defn closeness
 	[graph]
-	(reduce (fn [m k] (assoc m k (/ 1 (bfs graph k)))) {} (keys graph)))
+	(let [ks (keys graph)]
+		(zipmap ks (pmap #(->> % (bfs graph) (/ 1)) ks))))
 
 (defn rank
 	([mclose]
