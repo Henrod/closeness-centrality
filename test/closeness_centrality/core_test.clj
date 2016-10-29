@@ -1,5 +1,5 @@
 (ns closeness-centrality.core-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [is are deftest testing]]
             [closeness-centrality.core :refer :all]))
 
 (def little-graph
@@ -43,7 +43,7 @@
 				(is (map (fn [k v] (= (little-graph k) v) (rank-seq little-graph))))))))
 
 (deftest test-fraudulent
-	(testing "Fraudulent for little inputs"
+	(testing "Normal cases of input"
 		(are [x y] (= x y)
 			(fraudulent little-graph #{1}) {
 				1 0, 
@@ -64,7 +64,19 @@
 				1  3/16, 
 				2  1/8, 
 				3  7/48, 
-				4 0})))
+				4 0}
+			(fraudulent little-graph #{1 2}){
+				1  0, 
+				2  0, 
+				3  1/16, 
+				4 1/16}
+			(fraudulent little-graph #{5}){
+				1  1/4, 
+				2  1/4 
+				3  1/6, 
+				4 1/6}))
+	(testing "Passing a list to fraudulent"
+		(is (thrown? AssertionError (fraudulent little-graph [1 2 3])))))
 
 (deftest test-as-decimal
 	(testing "test for some simple inputs"
@@ -75,6 +87,8 @@
 
 (deftest test-read-file
 	(testing "read little_input.txt"
+		(spit "test/closeness_centrality/little_input.txt" "1 2\n1 3\n2 4")
+		(Thread/sleep 1e3)
 		(is (= [1 2 1 3 2 4]
 			(read-file "test/closeness_centrality/little_input.txt")))))
 

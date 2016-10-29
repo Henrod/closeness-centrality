@@ -33,18 +33,13 @@
 
 (defn rank
 	([mclose]
-		(into (sorted-map-by 
-			(fn [k1 k2] 
-				(<= (mclose k2) (mclose k1))))
-			mclose))
+		(sort #(compare (second %2) (second %1)) mclose))
 	([mclose as-dec]
-		(into (sorted-map-by 
-			(fn [k1 k2] 
-				(<= (mclose k2) (mclose k1))))
-			(if as-dec (as-decimal mclose) mclose))))
+		(rank (if as-dec (as-decimal mclose) mclose))))
 
 (defn fraudulent 
 	[graph frauds]
+	{:pre [(map? graph) (set? frauds)]}
 	(let [fk (fn [e v] (* v (- 1 (math/expt 1/2 e))))]
 		(reduce 
 			(fn [ncloseness source]
@@ -65,7 +60,7 @@
 
 (defn add-connection
 	[graph [src dst]]
-	(if (and src dst (not= src dst))
+	(if (not= src dst)
 		(let [partial-add (fn [m src dst]
 				         		(let [adjs (m src #{})] 
 				         			(assoc m src (conj adjs dst))))]
