@@ -5,15 +5,13 @@
 		[clojure.string :as str]
 		[clojure.set :as set]))
 
-(defn- as-decimal 
-	[m]
-	(zipmap (keys m) (pmap double (vals m))))
+(def select-values (comp vals select-keys))
 
-(defmacro common-recur 
+(defmacro search-recur 
 	[graph visited adj e func]
 	`(recur
 		(apply conj ~visited ~adj)
-		(distinct (filter (complement ~visited) (apply set/union (map #(~graph %) ~adj))))
+		(->> (select-values ~graph ~adj) (apply set/union) (filter (complement ~visited)))
 		(inc ~e)
 		(~func)))
 
@@ -22,14 +20,21 @@
 	(loop [visited #{source}, adj (graph source), e 1, dists 0]
 		(if (empty? adj)
 			dists
-			(common-recur 
-				graph visited adj e 
-				#(+ dists (* e (count (filter (complement visited) adj))))))))
+			(search-recur 
+				graph 
+				visited 
+				adj 
+				e 
+				#(->> adj (filter (complement visited)) count (* e) (+ dists))))))
 
 (defn closeness
 	[graph]
 	(let [ks (keys graph)]
 		(zipmap ks (pmap #(/ 1 (bfs graph %)) ks))))
+
+(defn- as-decimal 
+	[m]
+	(zipmap (keys m) (pmap double (vals m))))
 
 (defn rank
 	([mclose]
@@ -37,21 +42,26 @@
 	([mclose as-dec]
 		(rank (if as-dec (as-decimal mclose) mclose))))
 
+(defn- F<k> [e v]
+	(* v (- 1 (math/expt 1/2 e))))
+
 (defn fraudulent 
 	[graph frauds]
 	{:pre [(map? graph) (set? frauds)]}
-	(let [fk (fn [e v] (* v (- 1 (math/expt 1/2 e))))]
-		(reduce 
-			(fn [ncloseness source]
-				(if (contains? graph source)
-					(loop [visited #{source}, adj (graph source), e 1, ncloseness (assoc ncloseness source 0)]
-						(if (empty? adj)
-							ncloseness
-							(common-recur 
-								graph visited adj e 
-								#(reduce (fn [m k] (update m k (partial fk e))) ncloseness adj))))
-					ncloseness))
-			(closeness graph) frauds)))
+	  (reduce 
+	    (fn [ncloseness source]
+		  (if (contains? graph source)
+		    (loop [visited #{source}, adj (graph source), e 1, ncloseness (assoc ncloseness source 0)]
+		      (if (empty? adj)
+			     ncloseness
+				  (search-recur 
+				   graph
+				   visited
+				   adj
+				   e 
+				   #(reduce (fn [m k] (if (contains? visited k) m (update m k (partial F<k> e)))) ncloseness adj))))
+		  ncloseness))
+	  (closeness graph) frauds))
 
 (defn read-file
 	[path]
