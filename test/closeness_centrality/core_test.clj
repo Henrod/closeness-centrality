@@ -2,13 +2,10 @@
   (:require [clojure.test :refer [is are deftest testing]]
             [closeness-centrality.core :refer :all]))
 
-(def little-graph
-	{
-		1 #{2 3}, 
-		2 #{1 4}, 
-		3 #{1}, 
-		4 #{2}
-	})
+(def little-graph {1 #{2 3},
+	                                2 #{1 4},
+	                                3 #{1},
+	                                4 #{2}})
 
 (deftest test-bfs
 	(testing "BFS for little inputs"
@@ -25,7 +22,16 @@
 				1/4 (cmap 1)
 				1/4 (cmap 2)
 				1/6 (cmap 3)
-				1/6 (cmap 4)))))
+				1/6 (cmap 4))))
+
+	(testing "Closeness for circular inputs"
+		(let [circ-graph {1 #{2 3 4} 2 #{1 3 4} 3 #{1 2 4} 4 #{1 2 3}} 
+			      cmap (closeness circ-graph)]
+			(are [x y] (= x y)
+				1/3 (cmap 1)
+				1/3 (cmap 2)
+				1/3 (cmap 3)
+				1/3 (cmap 4)))))
 
 (deftest test-rank
 	(testing "Rank for little inputs"
@@ -34,6 +40,7 @@
 			(and
 				(is (apply >= (map second rank-seq)))
 				(is (map (fn [k v] (= (little-graph k) v) (rank-seq little-graph)))))))
+
 	(testing "Rank for edges.txt"
 		(let [graph (build-graph "test/closeness_centrality/edges.txt")
 		         cmap (closeness graph)
@@ -75,6 +82,32 @@
 				2  1/4 
 				3  1/6, 
 				4 1/6}))
+
+	(testing "Not connected graph: 5-6-7 are disjoint from the rest"
+		(let [not-con-graph (-> little-graph (add-connection [5 6]) (add-connection [6 7]))]
+			(is (= (fraudulent not-con-graph #{1}){
+				    	1 0, 
+				       2 1/8, 
+				       3 1/12, 
+				       4 1/8,
+				       5 1/3,
+				       6 1/2,
+				       7 1/3}))))
+
+	(testing "Fraudulent for circular inputs"
+		(let [circ-graph {1 #{2 3 4} 2 #{1 3 4} 3 #{1 2 4} 4 #{1 2 3}}]
+			(are [x y] (= x y)
+			    (fraudulent circ-graph #{1}){
+			    	1 0,
+			    	2 1/6,
+			    	3 1/6,
+			    	4 1/6}
+			    (fraudulent circ-graph #{3}){
+			    	1 1/6,
+			    	2 1/6,
+			    	3 0,
+			    	4 1/6})))
+
 	(testing "Passing a list to fraudulent"
 		(is (thrown? AssertionError (fraudulent little-graph [1 2 3])))))
 
