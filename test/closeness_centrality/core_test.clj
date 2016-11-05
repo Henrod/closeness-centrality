@@ -3,9 +3,9 @@
             [closeness-centrality.core :refer :all]))
 
 (def little-graph {1 #{2 3},
-	                                2 #{1 4},
-	                                3 #{1},
-	                                4 #{2}})
+                   2 #{1 4},
+                   3 #{1},
+                   4 #{2}})
 
 (deftest test-bfs
 	(testing "BFS for little inputs"

@@ -18,11 +18,7 @@
 	(loop [visited #{source}, adj (graph source), e 1, dists 0]
 		(if (empty? adj)
 			dists
-			(search-recur 
-				graph 
-				visited 
-				adj 
-				e 
+			(search-recur graph visited adj e 
 				#(->> adj (filter (complement visited)) count (* e) (+ dists))))))
 
 (defn closeness [graph]
@@ -35,30 +31,29 @@
 
 (defn rank
 	([mclose]
-		(sort #(compare (second %2) (second %1)) mclose))
+	 (sort #(compare (second %2) (second %1)) mclose))
 	([mclose as-dec]
-		(rank (if as-dec (as-decimal mclose) mclose))))
+   (rank (if as-dec (as-decimal mclose) mclose))))
 
 (defn- F<k> [e v]
 	(* v (- 1 (math/expt 1/2 e))))
 
+(defn- fraudulent-operation [graph ncloseness source]
+	(if (not (contains? graph source))
+      ncloseness
+      (loop [visited #{source}, adj (graph source), e 1, ncloseness (assoc ncloseness source 0)]
+        (if (empty? adj)
+          ncloseness
+          (search-recur graph visited adj e 
+            #(reduce 
+                     (fn [m k] (if (contains? visited k) m (update m k (partial F<k> e))))
+				   	    ncloseness 
+				   	    adj))))))
+
 (defn fraudulent 
 	[graph frauds]
 	{:pre [(map? graph) (set? frauds)]}
-	  (reduce 
-	    (fn [ncloseness source]
-		  (if (contains? graph source)
-		    (loop [visited #{source}, adj (graph source), e 1, 
-		    	         ncloseness (assoc ncloseness source 0)]
-		      (if (empty? adj)
-			     ncloseness
-				  (search-recur graph visited adj e 
-				   #(reduce 
-				   	    (fn [m k] (if (contains? visited k) m (update m k (partial F<k> e)))) 
-				   	    ncloseness 
-				   	    adj))))
-		  ncloseness))
-	  (closeness graph) frauds))
+	(reduce (partial fraudulent-operation graph) (closeness graph) frauds))
 
 (defn read-file
 	[path]
@@ -67,13 +62,13 @@
 
 (defn add-connection
 	[graph [src dst]]
-	(if (not= src dst)
+	(if (= src dst)
+		graph
 		(let [partial-add (fn [m src dst]
-                                           (let [adjs (m src #{})] 
-				         			            (assoc m src (conj adjs dst))))]
+												(let [adjs (m src #{})]
+													(assoc m src (conj adjs dst))))]
 			(-> (partial-add graph src dst)
-			        (partial-add dst src)))
-		graph))
+					(partial-add dst src)))))
 
 (defn build-graph 
 	[path]

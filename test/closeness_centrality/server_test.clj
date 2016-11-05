@@ -71,15 +71,16 @@
 		(is (= (app (mock/request :get "/"))
 			        {:headers {}
 			          :status 200
-			          :body "([\"4\" 0.109375] [\"2\" 0.09375] [\"1\" 0.0] [\"3\" 0.0])"}))))
+			          :body "([\"4\" 0.109375] [\"2\" 0.09375] [\"1\" 0.0] [\"3\" 0.0])"})))
 
-(deftest test-wrong-add-connection
-	(testing "add same source and destination"
-      (is (= (app (mock/request :post "/add" {"src" 5, "dst" 5}))
-                  {:headers {}
-                    :body "Done"
-                    :status 200}))
-	  (is (= (app (mock/request :get "/"))
-	  	          {:headers {}
-	  	            :status 200
-	  	            :body "([\"1\" 1.0] [\"2\" 1.0])"}))))
+  (testing "add same source and destination"
+    (is (= (app (mock/request :post "/add" {"src" 5, "dst" 5}))
+           {:headers {}
+            :body "Done"
+            :status 200})))
+
+  (testing "getting new rank"
+    (is (= (app (mock/request :get "/"))
+           {:headers {}
+            :status 200
+            :body "([\"4\" 0.109375] [\"2\" 0.09375] [\"1\" 0.0] [\"3\" 0.0])"}))))
