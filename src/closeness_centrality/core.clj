@@ -1,7 +1,6 @@
 (ns closeness-centrality.core
 	(:require 
 		[clojure.math.numeric-tower :as math]
-		[clojure.java.io :as io]
 		[clojure.string :as str]
 		[clojure.set :as set]))
 
@@ -18,7 +17,7 @@
 	(loop [visited #{source}, adj (graph source), e 1, dists 0]
 		(if (empty? adj)
 			dists
-			(search-recur graph visited adj e 
+			(search-recur graph visited adj e
 				#(->> adj (filter (complement visited)) count (* e) (+ dists))))))
 
 (defn closeness [graph]
